@@ -1,26 +1,32 @@
-function displayData(data) {
-  var citiesList = data._embedded['city:search-results'].map(function(city) {
-    return (
-      '<div>' + city.matching_full_name + '</div>'
-    );
-  });
-  $('.results').html(citiesList);
-};
+function displayData(data, searchTerm, dom) {
+  var resultString = (
+    '<h1 class="cityName">' + searchTerm + '</h1>\
+    <p class="description">' + data.summary + '</p>'
+  );
 
-function getData(searchTerm, dom) {
+  scoresByCategory = data.categories.reduce(function(total, category) {
+    return total + (
+      '<h3 class="category">' + category.name + '</h3>\
+      <p class="score">' + Math.round(category.score_out_of_10 * 100) / 100 + '</p>'
+    );
+  }, '<div class="scoresByCategory">') + '</div>';
+
+  resultString += scoresByCategory;
+
+  $('.results').html(resultString);
+}
+
+function getData(formattedTerm, searchTerm, dom) {
   var settings = {
-    url: 'https://api.teleport.org/api/cities/',
+    url: 'https://api.teleport.org/api/urban_areas/slug:' + formattedTerm + '/scores/',
     type: 'GET',
     dataType: 'json',
-    data: {
-      search: searchTerm
-    }
   };
 
-  $.ajax(settings)
+  $.ajax(settings, searchTerm)
     .done(function(data) {
       console.log('HTTP GET request successful. data:', data);
-      displayData(data);
+      displayData(data, searchTerm, dom);
     })
     .fail(function(error) {
       console.log('error:', error);
@@ -28,6 +34,10 @@ function getData(searchTerm, dom) {
     .always(function() {
       //
     });
+};
+
+function formatTerm(searchTerm) {
+  return searchTerm.trim().toLowerCase().replace(/ /g, '-');
 };
 
 function getInput(dom) {
@@ -41,7 +51,8 @@ function listenForFormSubmit(dom) {
   $('.js-form').submit(function(event) {
     event.preventDefault();
     var searchTerm = getInput(dom);
-    getData(searchTerm, dom);
+    var formattedTerm = formatTerm(searchTerm);
+    getData(formattedTerm, searchTerm, dom);
   });
 };
 
