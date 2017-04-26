@@ -18,15 +18,19 @@ function displayData(data, searchTerm, dom) {
 
 function getData(formattedTerm, searchTerm, dom) {
   var settings = {
-    url: 'https://api.teleport.org/api/urban_areas/slug:' + formattedTerm + '/scores/',
+    url: 'https://api.teleport.org/api/cities/',
     type: 'GET',
     dataType: 'json',
+    data: {
+      search: searchTerm,
+      embed: 'city:search-results/city:item/city:urban_area/ua:scores'
+    }
   };
 
   $.ajax(settings, searchTerm)
     .done(function(data) {
       console.log('HTTP GET request successful. data:', data);
-      displayData(data, searchTerm, dom);
+      // displayData(data, searchTerm, dom);
     })
     .fail(function(error) {
       console.log('error:', error);
