@@ -1,22 +1,35 @@
+function buildScoresList(categoriesArray) {
+  return categoriesArray.reduce(function(categories, category) {
+    var categoryTemplate = (
+      '<li class="category">\
+        <h3 class="categoryName">' + category.name + '</h3>\
+        <p class="categoryScore">' + Math.round(category.score_out_of_10 * 100) / 100 + '</p>\
+      </li>'
+    );
+    return categories + categoryTemplate;
+  }, '<ul class="scores">') + '</ul>';
+};
+
+function getUrbanArea(data) {
+  return data._embedded['city:search-results'][0]._embedded['city:item']._embedded['city:urban_area'];
+};
+
+function getUrbanAreaScores(data) {
+  return getUrbanArea(data)._embedded['ua:scores'];
+};
+
 function displayData(data, searchTerm, dom) {
-  var resultString = (
-    '<h1 class="cityName">' + searchTerm + '</h1>\
-    <p class="description">' + data.summary + '</p>'
+  var result = (
+    '<h2 class="urbanArea_name">' + getUrbanArea(data).full_name + '</h2>\
+     <p class="urbanArea_description">' + getUrbanAreaScores(data).summary + '</p>'
   );
 
-  scoresByCategory = data.categories.reduce(function(total, category) {
-    return total + (
-      '<h3 class="category">' + category.name + '</h3>\
-      <p class="score">' + Math.round(category.score_out_of_10 * 100) / 100 + '</p>'
-    );
-  }, '<div class="scoresByCategory">') + '</div>';
+  result += buildScoresList(getUrbanAreaScores(data).categories);
 
-  resultString += scoresByCategory;
-
-  $('.results').html(resultString);
+  $('.js-results').html(result);
 }
 
-function getData(formattedTerm, searchTerm, dom) {
+function getData(searchTerm, dom) {
   var settings = {
     url: 'https://api.teleport.org/api/cities/',
     type: 'GET',
@@ -30,7 +43,7 @@ function getData(formattedTerm, searchTerm, dom) {
   $.ajax(settings, searchTerm)
     .done(function(data) {
       console.log('HTTP GET request successful. data:', data);
-      // displayData(data, searchTerm, dom);
+      displayData(data, searchTerm, dom);
     })
     .fail(function(error) {
       console.log('error:', error);
@@ -40,12 +53,14 @@ function getData(formattedTerm, searchTerm, dom) {
     });
 };
 
+// normalization
+// never trust user inpput
 function formatTerm(searchTerm) {
-  return searchTerm.trim().toLowerCase().replace(/ /g, '-');
+  return searchTerm.trim().toLowerCase();
 };
 
 function getInput(dom) {
-  return $(dom.inputSearch).val().trim();
+  return $(dom.inputSearch).val().trim().toLowerCase();
 };
 
 ////////////////////////////////////////////////////////////////
@@ -55,8 +70,7 @@ function listenForFormSubmit(dom) {
   $('.js-form').submit(function(event) {
     event.preventDefault();
     var searchTerm = getInput(dom);
-    var formattedTerm = formatTerm(searchTerm);
-    getData(formattedTerm, searchTerm, dom);
+    getData(searchTerm, dom);
   });
 };
 
